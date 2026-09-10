@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SongScope 2.0 — Analiza, aprende y descubre música</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#121212;
+    --card:#1E1E1E;
+    --card-hi:#242424;
+    --accent:#7C4DFF;
+    --accent-2:#00C2FF;
+    --text:#FFFFFF;
+    --text-2:#B3B3B3;
+    --success:#4CAF50;
+    --error:#FF5252;
+    --border: rgba(255,255,255,0.08);
+    --grad: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  body{
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(124,77,255,0.10), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(0,194,255,0.08), transparent 45%);
+    background-attachment:fixed;
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk', sans-serif;
+  }
+
+  button{
+    font-family:'Inter', sans-serif;
+    cursor:pointer;
+    border:none;
+    background:none;
+    color:inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ---------- App shell ---------- */
+  .app{
+    max-width:640px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:0 24px;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:28px 0 0;
+  }
+
+  .logo-mark{
+    width:30px; height:30px;
+    border-radius:8px;
+    background:var(--grad);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .logo-mark svg{width:16px; height:16px;}
+
+  .logo-word{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:17px;
+    letter-spacing:0.2px;
+  }
+
+  .screen{
+    display:none;
+    flex:1;
+    flex-direction:column;
+    padding:48px 0 64px;
+    animation:fadeIn 0.35s ease;
+  }
+  .screen.active{display:flex;}
+
+  @keyframes fadeIn{
+    from{opacity:0; transform:translateY(6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---------- Mini equalizer (decorative) ---------- */
+  .eq{
+    display:flex;
+    align-items:flex-end;
+    gap:4px;
+    height:14px;
+  }
+  .eq span{
+    display:block;
+    width:3px;
+    border-radius:2px;
+    background:var(--grad);
+    animation:eqbounce 1.1s ease-in-out infinite;
+  }
+  .eq span:nth-child(1){height:40%; animation-delay:0s;}
+  .eq span:nth-child(2){height:100%; animation-delay:0.15s;}
+  .eq span:nth-child(3){height:65%; animation-delay:0.3s;}
+  .eq span:nth-child(4){height:85%; animation-delay:0.45s;}
+  @keyframes eqbounce{
+    0%,100%{transform:scaleY(0.4);}
+    50%{transform:scaleY(1);}
+  }
+
+  /* ---------- HOME ---------- */
+  .home-hero{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:22px;
+  }
+
+  .home-wave{
+    width:100%;
+    height:64px;
+  }
+
+  .home-title{
+    font-size:clamp(30px, 6vw, 42px);
+    line-height:1.12;
+    font-weight:600;
+    letter-spacing:-0.5px;
+  }
+
+  .home-desc{
+    color:var(--text-2);
+    font-size:15.5px;
+    line-height:1.6;
+    max-width:46ch;
+  }
+
+  .home-features{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:4px;
+  }
+  .feature-chip{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:8px 13px;
+    border-radius:20px;
+    background:var(--card);
+    border:1px solid var(--border);
+    font-size:13px;
+    color:var(--text-2);
+  }
+  .feature-chip .dot{width:6px; height:6px; border-radius:50%; background:var(--accent-2);}
+
+  .btn-primary{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:15px 26px;
+    border-radius:12px;
+    background:var(--grad);
+    color:#fff;
+    font-weight:600;
+    font-size:15px;
+    width:fit-content;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow:0 8px 24px rgba(124,77,255,0.25);
+  }
+  .btn-primary:hover{transform:translateY(-1px); box-shadow:0 10px 28px rgba(124,77,255,0.35);}
+  .btn-primary:active{transform:translateY(0);}
+  .btn-primary:disabled{opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none;}
+
+  .btn-ghost{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:14px 22px;
+    border-radius:12px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-2);
+    font-weight:500;
+    font-size:14.5px;
+    transition:border-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-ghost:hover{border-color:rgba(255,255,255,0.2); color:var(--text);}
+
+  /* ---------- UPLOAD ---------- */
+  .step-label{
+    color:var(--accent-2);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.4px;
+    margin-bottom:8px;
+  }
+  .screen-title{
+    font-size:26px;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .screen-sub{
+    color:var(--text-2);
+    font-size:14.5px;
+    margin-bottom:28px;
+  }
+
+  .dropzone{
+    border:1.5px dashed var(--border);
+    border-radius:16px;
+    padding:48px 24px;
+    text-align:center;
+    background:var(--card);
+    transition:border-color 0.2s ease, background 0.2s ease;
+    cursor:pointer;
+  }
+  .dropzone.drag{
+    border-color:var(--accent);
+    background:var(--card-hi);
+  }
+  .dropzone.has-file{
+    border-style:solid;
+    border-color:rgba(124,77,255,0.4);
+  }
+
+  .drop-icon{
+    width:52px; height:52px;
+    margin:0 auto 16px;
+    border-radius:14px;
+    background:rgba(124,77,255,0.12);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .drop-icon svg{width:24px; height:24px; stroke:var(--accent-2);}
+
+  .drop-title{font-weight:600; font-size:15.5px; margin-bottom:6px;}
+  .drop-sub{color:var(--text-2); font-size:13px; margin-bottom:18px;}
+
+  .file-info{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:18px;
+    padding:12px 14px;
+    background:var(--bg);
+    border-radius:10px;
+    text-align:left;
+  }
+  .file-info svg{width:18px; height:18px; stroke:var(--success); flex-shrink:0;}
+  .file-name{font-size:13.5px; font-weight:500; word-break:break-all;}
+  .file-size{font-size:12px; color:var(--text-2); margin-top:2px;}
+
+  .file-error{
+    margin-top:16px;
+    padding:12px 14px;
+    background:rgba(255,82,82,0.08);
+    border:1px solid rgba(255,82,82,0.25);
+    border-radius:10px;
+    color:var(--error);
+    font-size:13px;
+    display:none;
+    text-align:left;
+  }
+  .file-error.show{display:block;}
+
+  .formats-note{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color:var(--text-2);
+    font-size:12.5px;
+    margin-top:16px;
+  }
+
+  .upload-actions{
+    display:flex;
+    gap:12px;
+    margin-top:28px;
+  }
+
+  input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+
+  /* ---------- ANALYZING ---------- */
+  .analyze-wrap{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap:26px;
+  }
+
+  .analyze-song-name{
+    font-size:14.5px;
+    color:var(--text-2);
+  }
+  .analyze-song-name strong{color:var(--text); font-weight:600;}
+
+  canvas#analyzeWave{
+    width:100%;
+    max-width:420px;
+    height:90px;
+  }
+
+  .progress-track{
+    width:100%;
+    max-width:340px;
+    height:6px;
+    border-radius:6px;
+    background:var(--card);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--grad);
+    border-radius:6px;
+    transition:width 0.4s ease;
+  }
+
+  .analyze-status{
+    font-size:15px;
+    font-weight:500;
+    min-height:22px;
+  }
+
+  /* ---------- RESULTS ---------- */
+  .results-head{
+    margin-bottom:22px;
+  }
+  .results-title{
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:4px;
+    word-break:break-word;
+  }
+  .results-duration{
+    color:var(--text-2);
+    font-size:13px;
+  }
+
+  canvas#resultWave{
+    width:100%;
+    height:64px;
+    margin:16px 0;
+    display:block;
+  }
+
+  audio{
+    width:100%;
+    height:38px;
+    margin-bottom:8px;
+  }
+  audio::-webkit-media-controls-panel{
+    background:var(--card);
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:16px;
+  }
+
+  .card-label{
+    font-size:11.5px;
+    font-weight:600;
+    letter-spacing:0.8px;
+    color:var(--text-2);
+    margin-bottom:12px;
+  }
+
+  .key-value{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:34px;
+    font-weight:700;
+    background:var(--grad);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+    line-height:1.15;
+  }
+  .key-sub{
+    font-size:15px;
+    color:var(--text-2);
+    margin-top:2px;
+  }
+  .key-confidence{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--text-2);
+  }
+  .confidence-track{
+    flex:1;
+    height:4px;
+    border-radius:4px;
+    background:var(--bg);
+    overflow:hidden;
+  }
+  .confidence-fill{
+    height:100%;
+    background:var(--accent-2);
+    border-radius:4px;
+  }
+
+  .instrument-row{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .instrument-row:last-child{border-bottom:none; padding-bottom:0;}
+  .instrument-row:first-of-type{padding-top:0;}
+
+  .instrument-icon{
+    width:34px; height:34px;
+    border-radius:9px;
+    background:var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .instrument-icon svg{width:17px; height:17px; stroke:var(--accent-2);}
+
+  .instrument-info{flex:1; min-width:0;}
+  .instrument-name{font-size:14.5px; font-weight:500;}
+  .instrument-level{font-size:12px; color:var(--text-2); margin-top:2px;}
+  .instrument-level.na{color:var(--text-2); opacity:0.6;}
+
+  .instrument-bar-track{
+    width:64px;
+    height:5px;
+    border-radius:5px;
+    background:var(--bg);
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  .instrument-bar-fill{
+    height:100%;
+    border-radius:5px;
+    background:var(--grad);
+  }
+
+  .results-actions{
+    display:flex;
+    gap:12px;
+    margin-top:6px;
+  }
+
+  .disclaimer{
+    margin-top:22px;
+    font-size:12px;
+    color:var(--text-2);
+    opacity:0.75;
+    line-height:1.6;
+    text-align:center;
+  }
+
+  @media (max-width:420px){
+    .upload-actions, .results-actions{flex-direction:column;}
+    .btn-primary, .btn-ghost{width:100%;}
+    .dropzone{padding:36px 18px;}
+  }
+
+  /* ===== SongScope 2.0 additions ===== */
+  .topbar{justify-content:space-between;}
+  .topbar-left{display:flex;align-items:center;gap:10px;}
+  .top-actions{display:flex;gap:8px;}
+  .icon-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--card);display:grid;place-items:center;color:var(--text-2);}
+  .icon-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+  .home-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;}
+  .btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:12px;background:var(--card);border:1px solid var(--border);color:var(--text);font-weight:600;font-size:14.5px;}
+  .btn-secondary:hover{border-color:rgba(255,255,255,.22);background:var(--card-hi);}
+  .tabs{display:flex;gap:6px;padding:5px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;}
+  .tab{flex:1;padding:10px;border-radius:8px;color:var(--text-2);font-size:13.5px;font-weight:600;}
+  .tab.active{background:var(--card-hi);color:var(--text);}
+  .link-panel{display:none;}
+  .link-panel.active{display:block;}
+  .text-input{width:100%;padding:14px 15px;border-radius:11px;border:1px solid var(--border);background:var(--card);color:var(--text);outline:none;font:inherit;}
+  .text-input:focus{border-color:rgba(124,77,255,.65);}
+  .helper{font-size:12px;color:var(--text-2);line-height:1.5;margin-top:9px;}
+  .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .metric-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+  .metric-row:last-child{border-bottom:none;}
+  .metric-label{font-size:13px;color:var(--text-2);}
+  .metric-value{font-weight:600;font-size:14px;}
+  .notes{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+  .note-chip{padding:8px 10px;border-radius:9px;background:var(--bg);border:1px solid var(--border);font-size:13px;font-weight:600;}
+  .chord-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .chord{padding:11px 5px;text-align:center;border-radius:9px;background:var(--bg);border:1px solid var(--border);font-family:'Space Grotesk';font-weight:600;}
+  .progression{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;}
+  .pill{padding:7px 9px;border-radius:20px;background:rgba(124,77,255,.12);color:#ddd;font-size:12px;}
+  .emotion-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .meter{height:7px;background:var(--bg);border-radius:8px;overflow:hidden;margin-top:7px;}
+  .meter > div{height:100%;background:var(--grad);border-radius:8px;}
+  .recommendation{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+  .recommendation:last-child{border-bottom:none;padding-bottom:0;}
+  .rec-art{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#2b1b55,#12394a);display:grid;place-items:center;font-size:18px;flex-shrink:0;}
+  .rec-title{font-size:14px;font-weight:600;}
+  .rec-meta{font-size:12px;color:var(--text-2);margin-top:3px;}
+  .similarity{margin-left:auto;font-size:11px;color:var(--accent-2);white-space:nowrap;}
+  .library-list{display:flex;flex-direction:column;gap:10px;}
+  .library-item{display:flex;align-items:center;gap:12px;padding:13px;background:var(--card);border:1px solid var(--border);border-radius:13px;}
+  .library-item .mini{width:40px;height:40px;border-radius:10px;background:var(--grad);display:grid;place-items:center;font-weight:700;}
+  .library-main{flex:1;min-width:0;}
+  .library-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .library-meta{font-size:12px;color:var(--text-2);margin-top:3px;}
+  .delete-btn{color:var(--text-2);padding:7px;}
+  .empty{padding:30px 10px;text-align:center;color:var(--text-2);font-size:13.5px;line-height:1.6;}
+  .section-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+  .section-nav button{padding:10px 7px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text-2);font-size:12px;}
+  .section-nav button:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#242424;border:1px solid var(--border);padding:11px 15px;border-radius:10px;font-size:13px;transition:.2s;z-index:20;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  @media(max-width:520px){
+    .result-grid{grid-template-columns:1fr;}
+    .chord-grid{grid-template-columns:repeat(3,1fr);}
+    .emotion-wrap{grid-template-columns:1fr;}
+    .home-actions{flex-direction:column;}
+    .home-actions button{width:100%;}
+  }
+
+</style>
+
+<style id="netflix-home-ui">
+/* --- Netflix-inspired SongScope home --- */
+#screen-home{
+  padding-top:28px;
+}
+.netflix-home{
+  width:100%;
+}
+.ns-hero{
+  position:relative;
+  min-height:390px;
+  border-radius:22px;
+  overflow:hidden;
+  display:flex;
+  align-items:flex-end;
+  padding:38px;
+  margin-bottom:34px;
+  background:
+    linear-gradient(90deg,rgba(8,8,11,.98) 0%,rgba(8,8,11,.88) 35%,rgba(8,8,11,.35) 75%,rgba(8,8,11,.68) 100%),
+    radial-gradient(circle at 78% 38%,rgba(124,77,255,.72),transparent 23%),
+    radial-gradient(circle at 88% 72%,rgba(0,194,255,.34),transparent 24%),
+    linear-gradient(135deg,#21183d,#111117 55%,#16162a);
+  box-shadow:0 22px 65px rgba(0,0,0,.45);
+}
+.ns-hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 42px,rgba(255,255,255,.015) 43px 44px),
+    linear-gradient(135deg,transparent 0 50%,rgba(255,255,255,.035) 50.2% 50.5%,transparent 50.7%);
+}
+.ns-copy{position:relative;z-index:1;max-width:520px}
+.ns-kicker{
+  color:#bdaeff;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:2px;
+  margin-bottom:13px;
+}
+.ns-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(34px,7vw,52px);
+  line-height:1;
+  letter-spacing:-1.6px;
+  margin-bottom:17px;
+}
+.ns-desc{
+  color:#c7c7cd;
+  font-size:14px;
+  line-height:1.65;
+  max-width:500px;
+  margin-bottom:23px;
+}
+.ns-actions{display:flex;gap:10px;flex-wrap:wrap}
+.ns-primary,.ns-secondary{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border-radius:10px;padding:13px 18px;font-size:13.5px;font-weight:700;
+}
+.ns-primary{background:#fff;color:#111;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.ns-secondary{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px)}
+.ns-primary:hover,.ns-secondary:hover{transform:translateY(-1px)}
+.ns-section{margin:0 0 29px}
+.ns-section-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:13px}
+.ns-section-title{font-family:'Space Grotesk';font-size:18px;font-weight:600}
+.ns-section-sub{color:#85858d;font-size:12px;margin-top:4px}
+.ns-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ns-card{
+  position:relative;min-height:142px;padding:17px;border-radius:13px;
+  background:linear-gradient(145deg,#202023,#18181b);
+  border:1px solid rgba(255,255,255,.065);
+  cursor:pointer;overflow:hidden;
+  transition:.18s ease;
+}
+.ns-card:hover{transform:translateY(-4px);border-color:rgba(124,77,255,.45);background:#222126}
+.ns-card-icon{
+  width:38px;height:38px;border-radius:10px;
+  display:grid;place-items:center;
+  background:rgba(124,77,255,.13);color:#bcaeff;
+  font-size:18px;margin-bottom:22px;
+}
+.ns-card-title{font-family:'Space Grotesk';font-weight:600;font-size:14px;margin-bottom:5px}
+.ns-card-text{font-size:11.5px;line-height:1.45;color:#8e8e96}
+.ns-arrow{position:absolute;right:14px;bottom:13px;color:#66666e;font-size:18px}
+.ns-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.ns-step{
+  display:flex;gap:10px;padding:14px;border-radius:12px;
+  background:#18181b;border:1px solid rgba(255,255,255,.06)
+}
+.ns-num{
+  flex:0 0 27px;height:27px;border-radius:50%;
+  display:grid;place-items:center;background:#2a2137;color:#c7baff;
+  font-size:11px;font-weight:800
+}
+.ns-step strong{display:block;font-size:12.5px;margin-bottom:3px}
+.ns-step span{display:block;color:#85858d;font-size:10.5px;line-height:1.4}
+.ns-preview{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px
+}
+.ns-preview-card{
+  min-height:90px;padding:15px;border-radius:12px;
+  background:#18181b;border:1px solid rgba(255,255,255,.06)
+}
+.ns-preview-card strong{font-size:12.5px}
+.ns-preview-card p{font-size:10.5px;color:#818189;line-height:1.4;margin-top:5px}
+@media(max-width:520px){
+  #screen-home{padding-top:14px}
+  .ns-hero{min-height:430px;padding:25px;border-radius:17px}
+  .ns-row{grid-template-columns:repeat(2,1fr)}
+  .ns-steps{grid-template-columns:1fr}
+  .ns-preview{grid-template-columns:1fr}
+}
+@media(max-width:360px){.ns-row{grid-template-columns:1fr}}
+</style>
+
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </div>
+      <div class="logo-word">SongScope</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnLibraryTop" title="Mi biblioteca" aria-label="Mi biblioteca">♫</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 1: INICIO ============ -->
+  <section class="screen active" id="screen-home">
+  <div class="netflix-home">
+
+    <div class="ns-hero">
+      <div class="ns-copy">
+        <div class="ns-kicker">SONGSCOPE ORIGINAL</div>
+        <div class="ns-title">Tu música.<br>Entendida de otra forma.</div>
+        <p class="ns-desc">
+          Analiza una canción y descubre su tonalidad, instrumentos, tempo,
+          notas y posibilidades para crear música.
+        </p>
+        <div class="ns-actions">
+          <button class="ns-primary" id="btnGoUpload">▶ Analizar una canción</button>
+          <button class="ns-secondary" id="btnGoLibrary">Mi biblioteca</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ns-section">
+      <div class="ns-section-head">
+        <div>
+          <div class="ns-section-title">¿Qué quieres hacer?</div>
+          <div class="ns-section-sub">Elige una opción para comenzar.</div>
+        </div>
+      </div>
+
+      <div class="ns-row">
+        <div class="ns-card" id="nsAnalyzeCard">
+          <div class="ns-card-icon">♪</div>
+          <div class="ns-card-title">Analizar canción</div>
+          <div class="ns-card-text">Descubre tonalidad, instrumentos y tempo a partir de tu audio.</div>
+          <div class="ns-arrow">›</div>
+        </div>
+
+        <div class="ns-card" id="nsLibraryCard">
+          <div class="ns-card-icon">▣</div>
+          <div class="ns-card-title">Mi biblioteca</div>
+          <div class="ns-card-text">Guarda tus análisis y vuelve a consultarlos cuando quieras.</div>
+          <div class="ns-arrow">›</div>
+        </div>
+
+        <div class="ns-card" id="nsLearnCard">
+          <div class="ns-card-icon">♫</div>
+          <div class="ns-card-title">Aprender</div>
+          <div class="ns-card-text">Explora notas, acordes y progresiones a partir de tu análisis.</div>
+          <div class="ns-arrow">›</div>
+        </div>
+
+        <div class="ns-card" id="nsDiscoverCard">
+          <div class="ns-card-icon">✦</div>
+          <div class="ns-card-title">Descubrir</div>
+          <div class="ns-card-text">Una sección preparada para futuras recomendaciones musicales.</div>
+          <div class="ns-arrow">›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ns-section">
+      <div class="ns-section-head">
+        <div>
+          <div class="ns-section-title">Así funciona</div>
+          <div class="ns-section-sub">Todo en tres pasos.</div>
+        </div>
+      </div>
+
+      <div class="ns-steps">
+        <div class="ns-step">
+          <div class="ns-num">1</div>
+          <div><strong>Elige una canción</strong><span>Sube un archivo MP3 o WAV desde tu dispositivo.</span></div>
+        </div>
+        <div class="ns-step">
+          <div class="ns-num">2</div>
+          <div><strong>SongScope analiza</strong><span>Procesa el audio y calcula sus características musicales.</span></div>
+        </div>
+        <div class="ns-step">
+          <div class="ns-num">3</div>
+          <div><strong>Explora y aprende</strong><span>Consulta los resultados y guarda lo que quieras conservar.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ns-section">
+      <div class="ns-section-head">
+        <div>
+          <div class="ns-section-title">Próximamente en SongScope</div>
+          <div class="ns-section-sub">Espacios preparados para futuras versiones.</div>
+        </div>
+      </div>
+      <div class="ns-preview">
+        <div class="ns-preview-card">
+          <strong>✨ Descubrir música</strong>
+          <p>Recomendaciones basadas en tonalidad, tempo, instrumentación y características musicales.</p>
+        </div>
+        <div class="ns-preview-card">
+          <strong>🎧 Más formas de analizar</strong>
+          <p>Una experiencia cada vez más completa para explorar tus canciones favoritas.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+  <!-- ============ SCREEN 2: CARGA ============ -->
+  <section class="screen" id="screen-upload">
+    <div class="step-label">PASO 1 DE 2</div>
+    <h2 class="screen-title">Selecciona tu canción</h2>
+    <p class="screen-sub">Carga un archivo o registra un enlace a una canción.</p>
+
+    <div class="tabs">
+      <button class="tab active" id="tabFile">Archivo</button>
+      <button class="tab" id="tabLink">Enlace</button>
+    </div>
+
+    <div class="link-panel active" id="filePanel">
+      <div class="dropzone" id="dropzone">
+        <div class="drop-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4-4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        </div>
+        <div class="drop-title">Arrastra tu archivo aquí</div>
+        <div class="drop-sub">o haz clic para buscarlo en tu dispositivo</div>
+        <button class="btn-ghost" id="btnBrowse" type="button">Subir archivo</button>
+        <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.webm">
+        <div class="file-info" id="fileInfo" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <div><div class="file-name" id="fileName"></div><div class="file-size" id="fileSize"></div></div>
+        </div>
+        <div class="file-error" id="fileError"></div>
+      </div>
+      <div class="formats-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B3B3B3" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Formatos compatibles: MP3, WAV, M4A, OGG, AAC, FLAC y WEBM
+      </div>
+    </div>
+
+    <div class="link-panel" id="linkPanel">
+      <input class="text-input" id="songLink" type="url" placeholder="Pega aquí el enlace de la canción">
+      <p class="helper">En esta versión, el enlace se guarda como referencia. El análisis real se realiza con archivos de audio que el navegador pueda leer directamente.</p>
+      <input class="text-input" id="linkName" style="margin-top:12px" placeholder="Nombre de la canción (opcional)">
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn-ghost" id="btnCancelUpload">Cancelar</button>
+      <button class="btn-primary" id="btnStartAnalysis" disabled>Analizar canción</button>
+    </div>
+  </section>
+
+  <!-- ============ LIBRARY ============ -->
+  <section class="screen" id="screen-library">
+    <div class="step-label">MI MÚSICA</div>
+    <h2 class="screen-title">Mi biblioteca</h2>
+    <p class="screen-sub">Aquí quedan guardados los análisis que decidas conservar.</p>
+    <div class="library-list" id="libraryList"></div>
+    <div class="upload-actions">
+      <button class="btn-primary" id="btnLibraryAnalyze">Analizar una canción</button>
+      <button class="btn-ghost" id="btnLibraryHome">Inicio</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: APRENDER ============ -->
+  <section class="screen" id="screen-learn">
+    <div class="step-label">APRENDER</div>
+    <h2 class="screen-title">Aprende con tu canción</h2>
+    <p class="screen-sub">Conceptos básicos para entender los resultados de SongScope.</p>
+
+    <div class="card">
+      <div class="card-label">TONALIDAD</div>
+      <div class="key-sub">La tonalidad indica el centro musical de una canción. A partir de ella se pueden organizar las notas y acordes que suelen funcionar juntos.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">ESCALA</div>
+      <div class="key-sub">Una escala es un conjunto ordenado de notas. SongScope muestra las notas principales de la escala asociada a la tonalidad detectada.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">ACORDES</div>
+      <div class="key-sub">Los acordes combinan varias notas al mismo tiempo. Las progresiones sugeridas te permiten experimentar con diferentes secuencias.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">TEMPO / BPM</div>
+      <div class="key-sub">Los BPM indican aproximadamente cuántos pulsos ocurren por minuto. Un tempo más alto suele dar una sensación de mayor movimiento.</div>
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn-primary" id="btnLearnAnalyze">Analizar una canción</button>
+      <button class="btn-ghost" id="btnLearnHome">Inicio</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: DESCUBRIR ============ -->
+  <section class="screen" id="screen-discover">
+    <div class="step-label">DESCUBRIR</div>
+    <h2 class="screen-title">Descubre música</h2>
+    <p class="screen-sub">Esta sección ya está preparada para futuras recomendaciones conectadas con tu análisis.</p>
+
+    <div class="card">
+      <div class="card-label">PRÓXIMAMENTE</div>
+      <div class="key-sub">SongScope podrá comparar características como tonalidad, tempo, instrumentación y género para ayudarte a encontrar música con rasgos parecidos.</div>
+    </div>
+    <div class="card">
+      <div class="recommendation">
+        <div class="rec-art">✦</div>
+        <div>
+          <div class="rec-title">Recomendaciones musicales</div>
+          <div class="rec-meta">Función de demostración</div>
+        </div>
+      </div>
+      <div class="recommendation">
+        <div class="rec-art">♫</div>
+        <div>
+          <div class="rec-title">Explorar por tonalidad</div>
+          <div class="rec-meta">Próxima versión</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn-primary" id="btnDiscoverAnalyze">Analizar una canción</button>
+      <button class="btn-ghost" id="btnDiscoverHome">Inicio</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 3: ANALIZANDO ============ -->
+  <section class="screen" id="screen-analyze">
+    <div class="analyze-wrap">
+      <div class="analyze-song-name">Analizando <strong id="analyzeSongName"></strong></div>
+      <canvas id="analyzeWave" width="420" height="90"></canvas>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="analyze-status" id="analyzeStatus">Preparando audio...</div>
+      <button class="btn-ghost" id="btnCancelAnalysis">Cancelar análisis</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 4: RESULTADOS ============ -->
+  <section class="screen" id="screen-results">
+    <div class="results-head">
+      <div class="step-label">RESULTADOS</div>
+      <div class="results-title" id="resultsSongName"></div>
+      <div class="results-duration" id="resultsDuration"></div>
+    </div>
+
+    <audio id="resultAudio" controls></audio>
+    <canvas id="resultWave" width="600" height="64"></canvas>
+
+    <div class="card">
+      <div class="card-label">TONALIDAD</div>
+      <div class="key-value" id="keyValue">—</div>
+      <div class="key-sub" id="keySub"></div>
+      <div class="key-confidence">
+        <span>Confianza</span>
+        <div class="confidence-track"><div class="confidence-fill" id="confidenceFill"></div></div>
+        <span id="confidencePct"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">INSTRUMENTOS DETECTADOS</div>
+      <div id="instrumentList"></div>
+    </div>
+
+    <div class="result-grid">
+      <div class="card">
+        <div class="card-label">TEMPO</div>
+        <div class="key-value" id="bpmValue">—</div>
+        <div class="key-sub" id="tempoLabel">BPM estimado</div>
+      </div>
+      <div class="card">
+        <div class="card-label">CARACTERIZACIÓN</div>
+        <div class="metric-row"><span class="metric-label">Género</span><span class="metric-value" id="genreValue">—</span></div>
+        <div class="metric-row"><span class="metric-label">Emoción</span><span class="metric-value" id="emotionValue">—</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">ESCALA Y NOTAS</div>
+      <div class="key-sub" id="scaleDescription"></div>
+      <div class="notes" id="scaleNotes"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">¿QUÉ PUEDO TOCAR?</div>
+      <div class="key-sub">Acordes diatónicos sugeridos para la tonalidad detectada.</div>
+      <div class="chord-grid" id="chordGrid" style="margin-top:12px"></div>
+      <div class="card-label" style="margin-top:18px">PROGRESIONES PARA EMPEZAR</div>
+      <div class="progression" id="progressionList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">ENERGÍA Y EMOCIÓN</div>
+      <div class="emotion-wrap">
+        <div><div class="metric-label">Energía</div><div class="meter"><div id="energyMeter"></div></div></div>
+        <div><div class="metric-label">Valencia</div><div class="meter"><div id="valenceMeter"></div></div></div>
+      </div>
+      <p class="helper" id="emotionExplanation"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-label">DESCUBRE MÚSICA SIMILAR</div>
+      <div id="recommendationList"></div>
+      <p class="helper">Las recomendaciones de esta versión son ejemplos generados a partir de características musicales; una versión conectada a servicios externos podría ampliar esta función.</p>
+    </div>
+
+    <div class="results-actions">
+      <button class="btn-ghost" id="btnSaveAnalysis">Guardar en biblioteca</button>
+      <button class="btn-primary" id="btnRestart">Volver al inicio</button>
+      <button class="btn-primary" id="btnAnalyzeAnother">Analizar otra canción</button>
+    </div>
+
+    <p class="disclaimer">La tonalidad se calcula a partir del contenido armónico real del audio. La presencia de instrumentos es una estimación basada en características espectrales y puede no ser exacta.</p>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+
+  /* ================= Navigation ================= */
+  const screens = {
+    home: document.getElementById('screen-home'),
+    upload: document.getElementById('screen-upload'),
+    analyze: document.getElementById('screen-analyze'),
+    results: document.getElementById('screen-results'),
+    library: document.getElementById('screen-library'),
+    learn: document.getElementById('screen-learn'),
+    discover: document.getElementById('screen-discover'),
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  let selectedFile = null;
+  let cancelRequested = false;
+  let objectUrl = null;
+  let inputMode = 'file';
+  let currentAnalysis = null;
+  let currentSongName = '';
+
+  /* ================= Home decorative wave ================= */
+  (function drawHomeWave(){
+    const svg = document.getElementById('homeWave');
+    if(!svg) return; // Netflix home does not use the old decorative SVG.
+    const bars = 46;
+    const w = 400, gap = w / bars;
+    for(let i=0;i<bars;i++){
+      const h = 8 + Math.abs(Math.sin(i*0.35)) * 46 + Math.random()*6;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', i*gap + 1);
+      rect.setAttribute('y', (64-h)/2);
+      rect.setAttribute('width', Math.max(gap-2, 1.5));
+      rect.setAttribute('height', h);
+      rect.setAttribute('rx', 2);
+      rect.setAttribute('fill', i % 2 === 0 ? '#7C4DFF' : '#00C2FF');
+      rect.setAttribute('opacity', 0.55 + (i%3)*0.15);
+      svg.appendChild(rect);
+    }
+  })();
+
+  /* ================= Screen: Home ================= */
+  document.getElementById('btnGoUpload').addEventListener('click', () => showScreen('upload'));
+  document.getElementById('nsAnalyzeCard').addEventListener('click', () => showScreen('upload'));
+  document.getElementById('nsLibraryCard').addEventListener('click', () => { renderLibrary(); showScreen('library'); });
+  document.getElementById('nsLearnCard').addEventListener('click', () => showScreen('learn'));
+  document.getElementById('nsDiscoverCard').addEventListener('click', () => showScreen('discover'));
+
+  document.getElementById('btnLearnAnalyze').addEventListener('click', () => showScreen('upload'));
+  document.getElementById('btnLearnHome').addEventListener('click', () => showScreen('home'));
+  document.getElementById('btnDiscoverAnalyze').addEventListener('click', () => showScreen('upload'));
+  document.getElementById('btnDiscoverHome').addEventListener('click', () => showScreen('home'));
+
+  document.getElementById('btnGoLibrary').addEventListener('click', () => { renderLibrary(); showScreen('library'); });
+  document.getElementById('btnLibraryTop').addEventListener('click', () => { renderLibrary(); showScreen('library'); });
+  document.getElementById('btnLibraryHome').addEventListener('click', () => showScreen('home'));
+  document.getElementById('btnLibraryAnalyze').addEventListener('click', () => showScreen('upload'));
+
+  /* ================= Screen: Upload ================= */
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const btnBrowse = document.getElementById('btnBrowse');
+  const fileInfo = document.getElementById('fileInfo');
+  const fileNameEl = document.getElementById('fileName');
+  const fileSizeEl = document.getElementById('fileSize');
+  const fileError = document.getElementById('fileError');
+  const btnStartAnalysis = document.getElementById('btnStartAnalysis');
+  const tabFile = document.getElementById('tabFile');
+  const tabLink = document.getElementById('tabLink');
+  const filePanel = document.getElementById('filePanel');
+  const linkPanel = document.getElementById('linkPanel');
+  const songLink = document.getElementById('songLink');
+  const linkName = document.getElementById('linkName');
+
+  function setInputMode(mode){
+    inputMode = mode;
+    const isFile = mode === 'file';
+    tabFile.classList.toggle('active', isFile);
+    tabLink.classList.toggle('active', !isFile);
+    filePanel.classList.toggle('active', isFile);
+    linkPanel.classList.toggle('active', !isFile);
+    btnStartAnalysis.disabled = isFile ? !selectedFile : !songLink.value.trim();
+  }
+  tabFile.addEventListener('click', () => setInputMode('file'));
+  tabLink.addEventListener('click', () => setInputMode('link'));
+  songLink.addEventListener('input', () => {
+    if(inputMode === 'link') btnStartAnalysis.disabled = !songLink.value.trim();
+  });
+
+
+  function formatBytes(bytes){
+    if(bytes < 1024) return bytes + ' B';
+    if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+  }
+
+  function isValidAudioFile(file){
+    if(!file) return false;
+    const okTypes = [
+      'audio/mpeg','audio/mp3','audio/wav','audio/wave','audio/x-wav',
+      'audio/vnd.wave','audio/mp4','audio/x-m4a','audio/aac',
+      'audio/ogg','audio/webm','audio/flac','audio/x-flac'
+    ];
+    const name = (file.name || '').toLowerCase();
+    const extensions = ['.mp3','.wav','.m4a','.aac','.ogg','.oga','.flac','.webm'];
+    const okExt = extensions.some(ext => name.endsWith(ext));
+    return okTypes.includes(file.type) || okExt || (file.type && file.type.startsWith('audio/'));
+  }
+
+  function handleFile(file){
+    fileError.classList.remove('show');
+    if(!file){ return; }
+    if(!isValidAudioFile(file)){
+      fileError.textContent = 'No pude reconocer este archivo como audio compatible. Prueba con MP3, WAV, M4A, OGG, AAC, FLAC o WEBM.';
+      fileError.classList.add('show');
+      fileInfo.style.display = 'none';
+      dropzone.classList.remove('has-file');
+      btnStartAnalysis.disabled = true;
+      selectedFile = null;
+      return;
+    }
+    selectedFile = file;
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatBytes(file.size);
+    fileInfo.style.display = 'flex';
+    dropzone.classList.add('has-file');
+    btnStartAnalysis.disabled = false;
+  }
+
+  btnBrowse.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+  dropzone.addEventListener('click', (e) => {
+    if(e.target.closest('button')) return;
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    handleFile(file);
+  });
+
+  ['dragenter','dragover'].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+  });
+  ['dragleave','drop'].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove('drag'); });
+  });
+  dropzone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    handleFile(file);
+  });
+
+  document.getElementById('btnCancelUpload').addEventListener('click', () => {
+    selectedFile = null;
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    dropzone.classList.remove('has-file');
+    fileError.classList.remove('show');
+    btnStartAnalysis.disabled = true;
+    showScreen('home');
+  });
+
+  document.getElementById('btnStartAnalysis').addEventListener('click', () => {
+    if(inputMode === 'file'){
+      if(!selectedFile) return;
+      startAnalysis(selectedFile);
+    }else{
+      const url = songLink.value.trim();
+      if(!url) return;
+      const name = (linkName.value.trim() || 'Canción enlazada');
+      showLinkNotice(name, url);
+    }
+  });
+
+  function showLinkNotice(name, url){
+    currentSongName = name;
+    toast('Enlace registrado. Para analizar audio, usa un MP3 o WAV.');
+    setTimeout(() => {
+      showScreen('upload');
+      setInputMode('link');
+    }, 900);
+  }
+
+  /* ================= Screen: Analyzing ================= */
+  const analyzeStatus = document.getElementById('analyzeStatus');
+  const progressFill = document.getElementById('progressFill');
+  const analyzeSongName = document.getElementById('analyzeSongName');
+  const analyzeCanvas = document.getElementById('analyzeWave');
+  const actx2d = analyzeCanvas.getContext('2d');
+
+  let waveAnimFrame = null;
+  function animateAnalyzingWave(){
+    const w = analyzeCanvas.width, h = analyzeCanvas.height;
+    actx2d.clearRect(0,0,w,h);
+    const bars = 40;
+    const t = performance.now() / 300;
+    for(let i=0;i<bars;i++){
+      const amp = (Math.sin(t + i*0.5) + 1) / 2;
+      const barH = 6 + amp * (h*0.7);
+      const x = (w/bars) * i;
+      const grad = actx2d.createLinearGradient(0, h/2 - barH/2, 0, h/2 + barH/2);
+      grad.addColorStop(0, '#7C4DFF');
+      grad.addColorStop(1, '#00C2FF');
+      actx2d.fillStyle = grad;
+      actx2d.fillRect(x + 1, (h-barH)/2, Math.max((w/bars)-2, 1.5), barH);
+    }
+    waveAnimFrame = requestAnimationFrame(animateAnalyzingWave);
+  }
+
+  document.getElementById('btnCancelAnalysis').addEventListener('click', () => {
+    cancelRequested = true;
+    if(waveAnimFrame) cancelAnimationFrame(waveAnimFrame);
+    showScreen('upload');
+  });
+
+  const STAGES = [
+    { pct: 12, msg: 'Preparando audio...' },
+    { pct: 38, msg: 'Analizando frecuencias...' },
+    { pct: 64, msg: 'Detectando tonalidad...' },
+    { pct: 84, msg: 'Identificando instrumentos...' },
+    { pct: 96, msg: 'Organizando resultados...' },
+    { pct: 100, msg: 'Análisis completado.' },
+  ];
+
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  async function runStage(index, minDelay){
+    if(cancelRequested) return;
+    const s = STAGES[index];
+    analyzeStatus.textContent = s.msg;
+    progressFill.style.width = s.pct + '%';
+    await sleep(minDelay);
+  }
+
+  async function startAnalysis(file){
+    cancelRequested = false;
+    analyzeSongName.textContent = file.name;
+    progressFill.style.width = '0%';
+    analyzeStatus.textContent = 'Preparando audio...';
+    showScreen('analyze');
+    animateAnalyzingWave();
+
+    try{
+      await runStage(0, 400);
+      if(cancelRequested) return;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+
+      await runStage(1, 350);
+      if(cancelRequested) return;
+
+      const analysis = analyzeAudioBuffer(audioBuffer);
+
+      await runStage(2, 450);
+      if(cancelRequested) return;
+
+      await runStage(3, 450);
+      if(cancelRequested) return;
+
+      await runStage(4, 300);
+      if(cancelRequested) return;
+
+      await runStage(5, 350);
+      if(cancelRequested) return;
+
+      if(waveAnimFrame) cancelAnimationFrame(waveAnimFrame);
+      showResults(file, audioBuffer, analysis);
+      audioCtx.close();
+
+    }catch(err){
+      console.error(err);
+      if(waveAnimFrame) cancelAnimationFrame(waveAnimFrame);
+      analyzeStatus.textContent = 'El archivo se cargó, pero este navegador no puede decodificar ese formato de audio. Prueba con MP3 o WAV.';
+      await sleep(1200);
+      showScreen('upload');
+    }
+  }
+
+  /* ================= Audio analysis (real DSP) ================= */
+
+  // Simple iterative radix-2 FFT. re/im are Float32Array of length = power of two.
+  function fft(re, im){
+    const n = re.length;
+    for(let i=1, j=0; i<n; i++){
+      let bit = n >> 1;
+      for(; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if(i < j){
+        let tr = re[i]; re[i] = re[j]; re[j] = tr;
+        let ti = im[i]; im[i] = im[j]; im[j] = ti;
+      }
+    }
+    for(let len=2; len<=n; len <<= 1){
+      const ang = -2*Math.PI/len;
+      const wr = Math.cos(ang), wi = Math.sin(ang);
+      for(let i=0; i<n; i+=len){
+        let curWr = 1, curWi = 0;
+        for(let k=0;k<len/2;k++){
+          const ur = re[i+k], ui = im[i+k];
+          const vr = re[i+k+len/2]*curWr - im[i+k+len/2]*curWi;
+          const vi = re[i+k+len/2]*curWi + im[i+k+len/2]*curWr;
+          re[i+k] = ur+vr; im[i+k] = ui+vi;
+          re[i+k+len/2] = ur-vr; im[i+k+len/2] = ui-vi;
+          const nwr = curWr*wr - curWi*wi;
+          const nwi = curWr*wi + curWi*wr;
+          curWr = nwr; curWi = nwi;
+        }
+      }
+    }
+  }
+
+  const KK_MAJOR = [6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
+  const KK_MINOR = [6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+  const NOTE_NAMES = ['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
+  const NOTE_NAMES_EN = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+  function pearson(a, b){
+    const n = a.length;
+    const meanA = a.reduce((s,v)=>s+v,0)/n;
+    const meanB = b.reduce((s,v)=>s+v,0)/n;
+    let num=0, denA=0, denB=0;
+    for(let i=0;i<n;i++){
+      const da = a[i]-meanA, db = b[i]-meanB;
+      num += da*db; denA += da*da; denB += db*db;
+    }
+    const den = Math.sqrt(denA*denB);
+    return den === 0 ? 0 : num/den;
+  }
+
+  function analyzeAudioBuffer(audioBuffer){
+    const origRate = audioBuffer.sampleRate;
+    const numCh = audioBuffer.numberOfChannels;
+
+    // Mixdown to mono
+    let mono = new Float32Array(audioBuffer.length);
+    for(let ch=0; ch<numCh; ch++){
+      const data = audioBuffer.getChannelData(ch);
+      for(let i=0;i<data.length;i++) mono[i] += data[i]/numCh;
+    }
+
+    // Downsample (simple boxcar decimation) toward ~11025 Hz
+    const targetRate = 11025;
+    const factor = Math.max(1, Math.round(origRate/targetRate));
+    const dsLength = Math.floor(mono.length/factor);
+    const ds = new Float32Array(dsLength);
+    for(let i=0;i<dsLength;i++){
+      let sum=0;
+      for(let k=0;k<factor;k++) sum += mono[i*factor+k];
+      ds[i] = sum/factor;
+    }
+    const sr = origRate/factor;
+
+    // Take up to ~70s starting a little after the beginning (skip potential silence/intro fade)
+    const maxSeconds = 70;
+    const startOffset = Math.min(Math.floor(sr*3), Math.max(0, ds.length - Math.floor(sr*10)));
+    const maxSamples = Math.min(ds.length - startOffset, Math.floor(sr*maxSeconds));
+    const segment = ds.subarray(startOffset, startOffset + Math.max(maxSamples, 0));
+
+    const frameSize = 2048;
+    const hop = 1024;
+    const chroma = new Float32Array(12);
+
+    const bandSub = [20,80], bandBass=[80,250], bandLowMid=[250,800],
+          bandMid=[800,2500], bandHiMid=[2500,5000], bandHigh=[5000, sr/2];
+    let eSub=0, eBass=0, eLowMid=0, eMid=0, eHiMid=0, eHigh=0, eTotal=0;
+    let flatnessSum=0, frameCount=0;
+    const frameEnergies = [];
+
+    const hann = new Float32Array(frameSize);
+    for(let i=0;i<frameSize;i++) hann[i] = 0.5 - 0.5*Math.cos(2*Math.PI*i/(frameSize-1));
+
+    for(let pos=0; pos+frameSize<=segment.length; pos+=hop){
+      const re = new Float32Array(frameSize);
+      const im = new Float32Array(frameSize);
+      for(let i=0;i<frameSize;i++) re[i] = segment[pos+i]*hann[i];
+      fft(re, im);
+
+      const half = frameSize/2;
+      let frameEnergy = 0;
+      let logSum = 0, linSum = 0, magCount = 0;
+
+      for(let bin=1; bin<half; bin++){
+        const freq = bin*sr/frameSize;
+        const mag = Math.sqrt(re[bin]*re[bin] + im[bin]*im[bin]);
+        const power = mag*mag;
+        frameEnergy += power;
+
+        if(freq>=bandSub[0] && freq<bandSub[1]) eSub += power;
+        else if(freq>=bandBass[0] && freq<bandBass[1]) eBass += power;
+        else if(freq>=bandLowMid[0] && freq<bandLowMid[1]) eLowMid += power;
+        else if(freq>=bandMid[0] && freq<bandMid[1]) eMid += power;
+        else if(freq>=bandHiMid[0] && freq<bandHiMid[1]) eHiMid += power;
+        else if(freq>=bandHigh[0]) eHigh += power;
+
+        // Chroma: only consider a musically useful range
+        if(freq >= 65 && freq <= 1568 && mag > 0){
+          const midi = 69 + 12*Math.log2(freq/440);
+          let pc = Math.round(midi) % 12;
+          if(pc < 0) pc += 12;
+          chroma[pc] += mag;
+        }
+
+        if(mag > 1e-8){
+          logSum += Math.log(mag);
+          linSum += mag;
+          magCount++;
+        }
+      }
+      eTotal += frameEnergy;
+      frameEnergies.push(frameEnergy);
+
+      if(magCount>0){
+        const geoMean = Math.exp(logSum/magCount);
+        const arithMean = linSum/magCount;
+        if(arithMean>0) flatnessSum += geoMean/arithMean;
+      }
+      frameCount++;
+    }
+
+    // Key detection via Krumhansl-Schmuckler correlation
+    let bestKey = null, bestMode = null, bestScore = -Infinity, secondScore = -Infinity;
+    const chromaArr = Array.from(chroma);
+    const chromaSum = chromaArr.reduce((s,v)=>s+v,0) || 1;
+    const chromaNorm = chromaArr.map(v => v/chromaSum);
+
+    if(chromaSum > 0.0001){
+      for(let root=0; root<12; root++){
+        const majProfile = [];
+        const minProfile = [];
+        for(let i=0;i<12;i++){
+          majProfile.push(KK_MAJOR[(i-root+12)%12]);
+          minProfile.push(KK_MINOR[(i-root+12)%12]);
+        }
+        const majScore = pearson(chromaNorm, majProfile);
+        const minScore = pearson(chromaNorm, minProfile);
+        if(majScore > bestScore){ secondScore = bestScore; bestScore = majScore; bestKey = root; bestMode = 'major'; }
+        else if(majScore > secondScore) secondScore = majScore;
+        if(minScore > bestScore){ secondScore = bestScore; bestScore = minScore; bestKey = root; bestMode = 'minor'; }
+        else if(minScore > secondScore) secondScore = minScore;
+      }
+    }
+
+    const hasSignal = frameCount > 4 && chromaSum > 0.0001;
+    const margin = hasSignal ? Math.max(0, bestScore - secondScore) : 0;
+    let confidence = hasSignal ? Math.min(1, Math.max(0.15, (bestScore+1)/2*0.7 + margin*1.3)) : 0;
+    confidence = Math.max(0, Math.min(1, confidence));
+
+    // Percussiveness: rate of large frame-to-frame energy jumps
+    let onsetJumps = 0;
+    const avgFrameEnergy = frameEnergies.reduce((s,v)=>s+v,0)/(frameEnergies.length||1);
+    for(let i=1;i<frameEnergies.length;i++){
+      if(frameEnergies[i] > frameEnergies[i-1]*2.2 && frameEnergies[i] > avgFrameEnergy*0.6) onsetJumps++;
+    }
+    const onsetRate = frameEnergies.length ? onsetJumps/frameEnergies.length : 0;
+    const avgFlatness = frameCount ? flatnessSum/frameCount : 0;
+
+    const total = eTotal || 1;
+    const ratios = {
+      sub: eSub/total, bass: eBass/total, lowMid: eLowMid/total,
+      mid: eMid/total, hiMid: eHiMid/total, high: eHigh/total,
+    };
+
+    const instruments = estimateInstruments(ratios, onsetRate, avgFlatness, hasSignal);
+
+    return {
+      hasSignal,
+      keyIndex: bestKey,
+      mode: bestMode,
+      confidence,
+      instruments,
+    };
+  }
+
+  function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+
+  function estimateInstruments(ratios, onsetRate, flatness, hasSignal){
+    if(!hasSignal){
+      return ['Guitarra','Piano','Batería','Bajo','Cuerdas'].map(name => ({name, level: -1}));
+    }
+
+    // Heuristic 0-100 presence scores derived from spectral/temporal features
+    const bassScore = clamp01((ratios.sub*1.6 + ratios.bass*2.0)) * 100;
+
+    const percussiveness = clamp01(onsetRate*9 + flatness*1.4);
+    const drumsScore = clamp01(percussiveness*0.75 + ratios.hiMid*1.1) * 100;
+
+    const guitarScore = clamp01(ratios.lowMid*1.3 + ratios.mid*1.1 - flatness*0.3) * 100;
+
+    const tonalClarity = clamp01(1 - flatness*1.6);
+    const pianoScore = clamp01(ratios.mid*0.9 + ratios.hiMid*0.6) * tonalClarity * 100;
+
+    const stringsScore = clamp01(ratios.lowMid*0.7 + ratios.mid*0.8 - percussiveness*0.5) * tonalClarity * 100;
+
+    function level(score){
+      if(score >= 55) return 'Alta presencia';
+      if(score >= 30) return 'Media presencia';
+      if(score >= 12) return 'Baja presencia';
+      return null; // No identificado
+    }
+
+    const raw = [
+      {name:'Guitarra', score: guitarScore},
+      {name:'Piano', score: pianoScore},
+      {name:'Batería', score: drumsScore},
+      {name:'Bajo', score: bassScore},
+      {name:'Cuerdas', score: stringsScore},
+    ];
+
+    return raw
+      .sort((a,b) => b.score - a.score)
+      .map(r => ({ name: r.name, level: level(r.score), score: Math.round(r.score) }));
+  }
+
+  /* ================= Screen: Results ================= */
+  const ICONS = {
+    'Guitarra': '<path d="M9 18V6l9-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+    'Piano': '<rect x="3" y="8" width="18" height="10" rx="1"/><path d="M7 8v6M11 8v6M15 8v6"/>',
+    'Batería': '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+    'Bajo': '<path d="M9 18V4l9-1v12"/><circle cx="6" cy="19" r="3"/><circle cx="18" cy="14" r="3"/>',
+    'Cuerdas': '<path d="M4 12h16M4 8h16M4 16h16"/>',
+  };
+
+
+  function estimateBPM(audioBuffer){
+    const data = audioBuffer.getChannelData(0);
+    const sr = audioBuffer.sampleRate;
+    const maxSamples = Math.min(data.length, sr * 45);
+    const step = Math.max(1, Math.floor(sr / 200));
+    let prev = 0, flux = [];
+    for(let i=0;i<maxSamples;i+=step){
+      const v = Math.abs(data[i] || 0);
+      flux.push(Math.max(0, v-prev));
+      prev = v;
+    }
+    const mean = flux.reduce((a,b)=>a+b,0)/(flux.length||1);
+    const threshold = mean * 2.1;
+    const peaks = [];
+    for(let i=1;i<flux.length-1;i++){
+      if(flux[i] > threshold && flux[i] >= flux[i-1] && flux[i] >= flux[i+1]) peaks.push(i);
+    }
+    if(peaks.length < 4) return 100;
+    const intervals = [];
+    for(let i=1;i<peaks.length;i++){
+      const sec = (peaks[i]-peaks[i-1]) * step / sr;
+      if(sec > 0.22 && sec < 1.5) intervals.push(sec);
+    }
+    if(!intervals.length) return 100;
+    const avg = intervals.reduce((a,b)=>a+b,0)/intervals.length;
+    let bpm = 60/avg;
+    while(bpm < 70) bpm *= 2;
+    while(bpm > 180) bpm /= 2;
+    return Math.round(bpm);
+  }
+
+  function scaleFor(key, mode){
+    const major = [0,2,4,5,7,9,11];
+    const minor = [0,2,3,5,7,8,10];
+    const intervals = mode === 'major' ? major : minor;
+    return intervals.map(i => (key+i)%12);
+  }
+
+  function chordNames(key, mode){
+    const roots = scaleFor(key, mode);
+    const qualities = mode === 'major' ? ['','m','m','','','m','dim'] : ['m','dim','','m','m','',''];
+    return roots.map((r,i)=>NOTE_NAMES_EN[r] + qualities[i]);
+  }
+
+  function characterize(analysis, bpm){
+    const energy = Math.round(clamp01((bpm-65)/100)*100);
+    const valence = analysis.mode === 'major' ? 70 : 38;
+    let emotion = 'Equilibrada';
+    if(energy > 70 && valence > 55) emotion = 'Eufórica';
+    else if(energy > 60 && valence <= 55) emotion = 'Intensa';
+    else if(energy < 35 && valence > 55) emotion = 'Serena';
+    else if(energy < 45 && valence <= 55) emotion = 'Melancólica';
+    else if(valence > 60) emotion = 'Positiva';
+    else emotion = 'Reflexiva';
+    let genre = 'Pop / Electrónica';
+    const bass = analysis.instruments.find(x=>x.name==='Bajo')?.score || 0;
+    const drums = analysis.instruments.find(x=>x.name==='Batería')?.score || 0;
+    const guitar = analysis.instruments.find(x=>x.name==='Guitarra')?.score || 0;
+    if(guitar > 55 && drums > 45) genre = 'Rock / Indie';
+    else if(bass > 60 && bpm > 110) genre = 'Dance / Electrónica';
+    else if(bpm < 90 && analysis.mode === 'minor') genre = 'R&B / Soul';
+    return {genre, emotion, energy, valence};
+  }
+
+  function makeRecommendations(analysis, bpm, genre){
+    const key = NOTE_NAMES_EN[analysis.keyIndex ?? 0];
+    const pool = [
+      ['Midnight Drive','Synthwave','96%'],
+      ['Neon Echoes','Indie Pop','91%'],
+      ['After the Rain','R&B','87%'],
+      ['Electric Horizon','Electronic','84%'],
+      ['Velvet Room','Alternative','81%']
+    ];
+    return pool.map((x,i)=>({title:x[0], meta:`${x[1]} · ${key} ${analysis.mode}`, sim:x[2]}));
+  }
+
+  function showResults(file, audioBuffer, analysis){
+    document.getElementById('resultsSongName').textContent = file.name.replace(/\.(mp3|wav)$/i,'');
+    const dur = audioBuffer.duration;
+    const mm = Math.floor(dur/60), ss = Math.round(dur%60).toString().padStart(2,'0');
+    document.getElementById('resultsDuration').textContent = `Duración: ${mm}:${ss}`;
+    currentSongName = file.name.replace(/\.(mp3|wav)$/i,'');
+
+    if(objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    document.getElementById('resultAudio').src = objectUrl;
+
+    drawResultWave(audioBuffer);
+
+    const keyValueEl = document.getElementById('keyValue');
+    const keySubEl = document.getElementById('keySub');
+    const confidenceFill = document.getElementById('confidenceFill');
+    const confidencePct = document.getElementById('confidencePct');
+
+    if(analysis.hasSignal && analysis.keyIndex !== null){
+      const modeEs = analysis.mode === 'major' ? 'mayor' : 'menor';
+      const modeEn = analysis.mode === 'major' ? 'Major' : 'Minor';
+      keyValueEl.textContent = `${NOTE_NAMES[analysis.keyIndex]} ${modeEs}`;
+      keySubEl.textContent = `${NOTE_NAMES_EN[analysis.keyIndex]} ${modeEn}`;
+      const pct = Math.round(analysis.confidence*100);
+      confidenceFill.style.width = pct + '%';
+      confidencePct.textContent = pct + '%';
+    } else {
+      keyValueEl.textContent = 'No identificado';
+      keySubEl.textContent = 'No fue posible estimar la tonalidad con suficiente certeza.';
+      confidenceFill.style.width = '0%';
+      confidencePct.textContent = '0%';
+    }
+
+    const listEl = document.getElementById('instrumentList');
+    listEl.innerHTML = '';
+    analysis.instruments.forEach(inst => {
+      const row = document.createElement('div');
+      row.className = 'instrument-row';
+      const levelText = inst.level ? inst.level : 'No identificado';
+      const barPct = inst.level ? Math.max(8, inst.score) : 0;
+      row.innerHTML = `
+        <div class="instrument-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[inst.name]}</svg></div>
+        <div class="instrument-info">
+          <div class="instrument-name">${inst.name}</div>
+          <div class="instrument-level ${inst.level ? '' : 'na'}">${levelText}</div>
+        </div>
+        <div class="instrument-bar-track"><div class="instrument-bar-fill" style="width:${barPct}%"></div></div>
+      `;
+      listEl.appendChild(row);
+    });
+
+
+    const bpm = estimateBPM(audioBuffer);
+    const profile = characterize(analysis, bpm);
+    const notes = analysis.keyIndex !== null ? scaleFor(analysis.keyIndex, analysis.mode) : [];
+    const chords = analysis.keyIndex !== null ? chordNames(analysis.keyIndex, analysis.mode) : [];
+    document.getElementById('bpmValue').textContent = bpm;
+    document.getElementById('tempoLabel').textContent = bpm < 80 ? 'Lento' : bpm < 120 ? 'Moderado' : 'Rápido';
+    document.getElementById('genreValue').textContent = profile.genre;
+    document.getElementById('emotionValue').textContent = profile.emotion;
+    document.getElementById('scaleDescription').textContent =
+      analysis.keyIndex !== null ? `Notas de ${NOTE_NAMES_EN[analysis.keyIndex]} ${analysis.mode === 'major' ? 'mayor' : 'menor'}:` : 'No disponible';
+    document.getElementById('scaleNotes').innerHTML = notes.map(n => `<span class="note-chip">${NOTE_NAMES[n]}</span>`).join('');
+    document.getElementById('chordGrid').innerHTML = chords.map(c => `<div class="chord">${c}</div>`).join('');
+    document.getElementById('progressionList').innerHTML = [
+      [0,4,5,3],[0,5,3,4],[5,3,0,4]
+    ].map(p => `<span class="pill">${p.map(i=>chords[i] || '—').join(' · ')}</span>`).join('');
+    document.getElementById('energyMeter').style.width = profile.energy + '%';
+    document.getElementById('valenceMeter').style.width = profile.valence + '%';
+    document.getElementById('emotionExplanation').textContent =
+      `Caracterización orientativa: ${profile.emotion.toLowerCase()}, basada principalmente en tempo y tonalidad. No representa una medición objetiva de la emoción humana.`;
+    document.getElementById('recommendationList').innerHTML = makeRecommendations(analysis,bpm,profile.genre).map(r =>
+      `<div class="recommendation"><div class="rec-art">♫</div><div><div class="rec-title">${r.title}</div><div class="rec-meta">${r.meta}</div></div><div class="similarity">${r.sim}</div></div>`
+    ).join('');
+
+    currentAnalysis = {
+      name: currentSongName, keyIndex: analysis.keyIndex, mode: analysis.mode,
+      confidence: analysis.confidence, instruments: analysis.instruments,
+      bpm, genre: profile.genre, emotion: profile.emotion,
+      energy: profile.energy, valence: profile.valence,
+      savedAt: new Date().toLocaleString('es-CO')
+    };
+
+    showScreen('results');
+  }
+
+  function drawResultWave(audioBuffer){
+    const canvas = document.getElementById('resultWave');
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.clientWidth || 600;
+    canvas.width = cssWidth*dpr;
+    canvas.height = 64*dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const data = audioBuffer.getChannelData(0);
+    const w = cssWidth, h = 64;
+    const step = Math.ceil(data.length/w);
+    const mid = h/2;
+
+    ctx.clearRect(0,0,w,h);
+    const grad = ctx.createLinearGradient(0,0,w,0);
+    grad.addColorStop(0, '#7C4DFF');
+    grad.addColorStop(1, '#00C2FF');
+    ctx.fillStyle = grad;
+
+    for(let x=0; x<w; x++){
+      let min=1.0, max=-1.0;
+      const start = x*step;
+      for(let i=0;i<step && (start+i)<data.length;i++){
+        const v = data[start+i];
+        if(v<min) min=v;
+        if(v>max) max=v;
+      }
+      const y1 = mid + min*mid*0.9;
+      const y2 = mid + max*mid*0.9;
+      ctx.fillRect(x, y1, 1, Math.max(y2-y1,1));
+    }
+  }
+
+  document.getElementById('btnRestart').addEventListener('click', () => {
+    resetFlow();
+    showScreen('home');
+  });
+  document.getElementById('btnAnalyzeAnother').addEventListener('click', () => {
+    resetFlow();
+    showScreen('upload');
+  });
+
+
+  function getLibrary(){
+    try{return JSON.parse(localStorage.getItem('songscope_library') || '[]');}
+    catch(e){return [];}
+  }
+  function saveCurrentAnalysis(){
+    if(!currentAnalysis) return;
+    const lib = getLibrary().filter(x => x.name !== currentAnalysis.name);
+    lib.unshift(currentAnalysis);
+    localStorage.setItem('songscope_library', JSON.stringify(lib.slice(0,30)));
+    toast('Análisis guardado en tu biblioteca.');
+    renderLibrary();
+  }
+  function renderLibrary(){
+    const list = document.getElementById('libraryList');
+    const lib = getLibrary();
+    if(!lib.length){
+      list.innerHTML = `<div class="empty">Tu biblioteca está vacía.<br>Analiza una canción y guárdala para verla aquí.</div>`;
+      return;
+    }
+    list.innerHTML = lib.map((x,i)=>`
+      <div class="library-item">
+        <div class="mini">♫</div>
+        <div class="library-main">
+          <div class="library-name">${escapeHtml(x.name)}</div>
+          <div class="library-meta">${x.keyIndex !== null ? NOTE_NAMES_EN[x.keyIndex] + ' ' + (x.mode==='major'?'mayor':'menor') : 'Tonalidad no disponible'} · ${x.bpm || '—'} BPM · ${escapeHtml(x.genre || '')}</div>
+        </div>
+        <button class="delete-btn" data-delete="${i}" aria-label="Eliminar">×</button>
+      </div>`).join('');
+    list.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click',()=>{
+      const arr = getLibrary(); arr.splice(Number(btn.dataset.delete),1);
+      localStorage.setItem('songscope_library', JSON.stringify(arr)); renderLibrary(); toast('Análisis eliminado.');
+    }));
+  }
+  function escapeHtml(s){
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function toast(message){
+    const el = document.getElementById('toast');
+    el.textContent = message; el.classList.add('show');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>el.classList.remove('show'),2200);
+  }
+  document.getElementById('btnSaveAnalysis').addEventListener('click', saveCurrentAnalysis);
+
+  function resetFlow(){
+    selectedFile = null;
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    dropzone.classList.remove('has-file');
+    fileError.classList.remove('show');
+    btnStartAnalysis.disabled = true;
+    songLink.value = '';
+    linkName.value = '';
+    setInputMode('file');
+  }
+
+})();
+</script>
+</body>
+</html>
